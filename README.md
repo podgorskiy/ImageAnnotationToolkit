@@ -14,7 +14,7 @@ Subclass from `anntoolkit.App`
 In init method load some test image.
 
 ``` python
-import anntoolkithttp://anntoolkit.rtfd.io/
+import anntoolkit
 
 class App(anntoolkit.App):
     def __init__(self):

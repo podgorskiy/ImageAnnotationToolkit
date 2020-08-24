@@ -82,20 +82,20 @@ namespace Render
 		GLuint shader;
 	};
 
-	bool Program::Link(const Shader<SHADER_TYPE::COMPUTE_SHADER>& shader)
+	bool Program::Link(const Shader& shader)
 	{
 		Attacher attacher(m_program, shader.m_shader);
 		return LinkImpl();
 	}
 
-	bool Program::Link(const Shader<SHADER_TYPE::VERTEX_SHADER>& vs, const Shader<SHADER_TYPE::FRAGMENT_SHADER>& fs)
+	bool Program::Link(const Shader& vs, const Shader& fs)
 	{
 		Attacher attacher_vs(m_program, vs.m_shader);
 		Attacher attacher_fs(m_program, fs.m_shader);
 		return LinkImpl();
 	}
 
-	bool Program::Link(const Shader<SHADER_TYPE::VERTEX_SHADER>& vs, const Shader<SHADER_TYPE::GEOMETRY_SHADER>& gs, const Shader<SHADER_TYPE::FRAGMENT_SHADER>& fs)
+	bool Program::Link(const Shader& vs, const Shader& gs, const Shader& fs)
 	{
 		Attacher attacher_vs(m_program, vs.m_shader);
 		Attacher attacher_gs(m_program, gs.m_shader);
@@ -132,9 +132,9 @@ namespace Render
 	ProgramPtr MakeProgram(const char* vertex_shader, const char* fragment_shader)
 	{
 		bool succeeded = true;
-		Shader<SHADER_TYPE::VERTEX_SHADER> vs;
+		Shader vs(SHADER_TYPE::VERTEX_SHADER);
 		succeeded &= vs.CompileShader(vertex_shader);
-		Shader<SHADER_TYPE::FRAGMENT_SHADER> fs;
+		Shader fs(SHADER_TYPE::FRAGMENT_SHADER);
 		succeeded &= fs.CompileShader(fragment_shader);
 		ProgramPtr program(new Program);
 		succeeded &= program->Link(vs, fs);

@@ -20,19 +20,19 @@ namespace Render
 		};
 	};
 
-	template<SHADER_TYPE::Type T>
 	class Shader
 	{
 		Shader(const Shader& other) = delete;
 		Shader& operator=(const Shader&) = delete;
 		friend class Program;
 	public:
-		Shader();
+		Shader(SHADER_TYPE::Type type);
 		~Shader();
 
 		bool CompileShader(const char* src);
 
 	private:
+		SHADER_TYPE::Type m_type;
 		GLHandle m_shader;
 	};
 
@@ -77,11 +77,11 @@ namespace Render
 		Program();
 		~Program();
 
-		bool Link(const Shader<SHADER_TYPE::COMPUTE_SHADER>& shader);
+		bool Link(const Shader& shader);
 
-		bool Link(const Shader<SHADER_TYPE::VERTEX_SHADER>& vs, const Shader<SHADER_TYPE::FRAGMENT_SHADER>& fs);
+		bool Link(const Shader& vs, const Shader& fs);
 
-		bool Link(const Shader<SHADER_TYPE::VERTEX_SHADER>& vs, const Shader<SHADER_TYPE::GEOMETRY_SHADER>& gs, const Shader<SHADER_TYPE::FRAGMENT_SHADER>& fs);
+		bool Link(const Shader& vs, const Shader& gs, const Shader& fs);
 
 		void Use() const;
 

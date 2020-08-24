@@ -239,7 +239,7 @@ extension.extra_compile_cpp_args = extra_compile_cpp_args[target_os]
 setup(
     name='anntoolkit',
 
-    version='0.0.5',
+    version='0.0.6',
 
     description='anntoolkit',
     long_description=long_description,

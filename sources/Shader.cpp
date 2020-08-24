@@ -6,23 +6,11 @@
 
 namespace Render
 {
-	template
-	class Shader<SHADER_TYPE::COMPUTE_SHADER>;
 
-	template
-	class Shader<SHADER_TYPE::GEOMETRY_SHADER>;
-
-	template
-	class Shader<SHADER_TYPE::VERTEX_SHADER>;
-
-	template
-	class Shader<SHADER_TYPE::FRAGMENT_SHADER>;
-
-	template<SHADER_TYPE::Type T>
-	Shader<T>::Shader()
+	Shader::Shader(SHADER_TYPE::Type t): m_type(t)
 	{
 		GLuint type;
-		switch (T)
+		switch (t)
 		{
 			case SHADER_TYPE::COMPUTE_SHADER:
 				type = GL_COMPUTE_SHADER;
@@ -40,10 +28,9 @@ namespace Render
 		m_shader = glCreateShader(type);
 	}
 
-	template<SHADER_TYPE::Type T>
-	std::string GetShaderTypeName()
+	std::string GetShaderTypeName(SHADER_TYPE::Type t)
 	{
-		switch (T)
+		switch (t)
 		{
 			case SHADER_TYPE::COMPUTE_SHADER:
 				return "COMPUTE_SHADER";
@@ -57,8 +44,7 @@ namespace Render
 		return "INVALID_SHADER";
 	}
 
-	template<SHADER_TYPE::Type T>
-	Shader<T>::~Shader()
+	Shader::~Shader()
 	{
 		glDeleteShader(m_shader);
 	}
@@ -84,8 +70,7 @@ namespace Render
 		}
 	}
 
-	template<SHADER_TYPE::Type T>
-	bool Shader<T>::CompileShader(const char* src)
+	bool Shader::CompileShader(const char* src)
 	{
 		glShaderSource(m_shader, 1, &src, NULL);
 
@@ -98,7 +83,7 @@ namespace Render
 		if (infoLen > 1)
 		{
 			spdlog::warn("{} during {} shader compilation.", compiled == GL_TRUE ? "Warning" : "Error",
-			             GetShaderTypeName<T>());
+			             GetShaderTypeName(m_type));
 
 			PrintSource(src, 1);
 

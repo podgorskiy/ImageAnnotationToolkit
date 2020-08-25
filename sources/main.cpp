@@ -94,7 +94,7 @@ public:
 
 	void SetImage(std::vector<ndarray_uint8> ims)
 	{
-		Render::debug_guard<> m_guard;
+		// Render::debug_guard<> m_guard;
 		const py::buffer_info& ndarray_info = ims[0].request();
 		glBindTexture(GL_TEXTURE_2D, m_textureHandle);
 
@@ -264,23 +264,25 @@ void Context::Init(int width, int height, const std::string& name)
 			throw runtime_error("GLFW initialization failed.\nThis may happen if you try to run bimpy on a headless machine ");
 		}
 
+		glfwWindowHint(GLFW_DEPTH_BITS, 24);
+		glfwWindowHint(GLFW_RED_BITS, 8);
 #if __APPLE__
 		// GL 3.2 + GLSL 150
-		const char* glsl_version = "#version 150";
-		glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-		glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 2);
-		glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);  // 3.2+ only
-		glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);            // Required on Mac
+		// const char* glsl_version = "#version 150";
+		// glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+		// glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 2);
+		// glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);  // 3.2+ only
+		// glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);            // Required on Mac
 #else
 		// GL 3.0 + GLSL 130
 		const char* glsl_version = "#version 130";
 		glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
 		glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
-		glfwWindowHint(GLFW_SRGB_CAPABLE, 1);
 
 		//glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);  // 3.2+ only
 		//glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);            // 3.0+ only
 #endif
+		glfwWindowHint(GLFW_SRGB_CAPABLE, 1);
 
 		m_window = glfwCreateWindow(width, height, name.c_str(), NULL, NULL);
 	    if (!m_window)
@@ -292,10 +294,10 @@ void Context::Init(int width, int height, const std::string& name)
 		glfwMakeContextCurrent(m_window);
 		if (gl3wInit() != GL3W_OK)
 		{
-			throw runtime_error("GL3W initialization failed.\nThis may happen if you try to run bimpy on a headless machine ");
+			// throw runtime_error("GL3W initialization failed.\nThis may happen if you try to run bimpy on a headless machine ");
 		}
 
-		Render::debug_guard<> m_guard;
+		// Render::debug_guard<> m_guard;
 		m_dr.Init();
 
 		glClearColor(0.1f, 0.1f, 0.1f, 1.0f);

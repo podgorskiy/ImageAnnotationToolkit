@@ -343,7 +343,7 @@ static int glnvg__renderCreate(void* uptr)
 			v_pos = a_pos;
 			vec2 pos = 2.0 * a_pos / u_viewSize - 1.0;
 			gl_Position = vec4(pos.x, -pos.y, 0, 1);
-		};
+		}
 	)";
 
 	const char* fillFragShader = R"(
@@ -418,10 +418,12 @@ static int glnvg__renderCreate(void* uptr)
 				vec2 pt = (paintMat * vec3(v_pos,1.0)).xy;
 				//float d = clamp((sdroundrect(pt, extent, radius) + feather*0.5) / feather, 0.0, 1.0);
 				float d = sdroundrect(pt, extent, radius) / feather;
-				innerCol.xyz = pow(innerCol.xyz, vec3(2.2));
-				outerCol.xyz = pow(outerCol.xyz, vec3(2.2));
+				vec4 ic = innerCol;
+				vec4 oc = outerCol;
+				ic.xyz = pow(ic.xyz, vec3(2.2));
+				oc.xyz = pow(oc.xyz, vec3(2.2));
 				float f = 1.0 - atan(1.0 / (d)) / 3.14;
-				vec4 color = mix(innerCol, outerCol, f);
+				vec4 color = mix(ic, oc, f);
 
 				// Combine alpha
 				color *= strokeAlpha * scissor;
@@ -463,7 +465,7 @@ static int glnvg__renderCreate(void* uptr)
 						(random(v_pos * 100.0) - 0.5) / 255.0
 				),
 				(random(v_pos * 100.0) - 0.5) / 255.0 * 20.0);
-		};
+		}
 	)";
 
 

@@ -94,7 +94,7 @@ public:
 
 	void SetImage(std::vector<ndarray_uint8> ims)
 	{
-		Render::debug_guard<> m_guard;
+		// Render::debug_guard<> m_guard;
 		const py::buffer_info& ndarray_info = ims[0].request();
 		glBindTexture(GL_TEXTURE_2D, m_textureHandle);
 
@@ -257,30 +257,34 @@ struct Vertex
 
 void Context::Init(int width, int height, const std::string& name)
 {
+	spdlog::info("Context init");
 	if (nullptr == m_window)
 	{
 		if (!glfwInit())
 		{
 			throw runtime_error("GLFW initialization failed.\nThis may happen if you try to run bimpy on a headless machine ");
 		}
+		spdlog::info("glfwInit ok");
 
+		glfwWindowHint(GLFW_DEPTH_BITS, 24);
+		glfwWindowHint(GLFW_RED_BITS, 8);
 #if __APPLE__
 		// GL 3.2 + GLSL 150
-		const char* glsl_version = "#version 150";
-		glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-		glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 2);
-		glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);  // 3.2+ only
-		glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);            // Required on Mac
+		// const char* glsl_version = "#version 150";
+		// glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+		// glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 2);
+		// glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);  // 3.2+ only
+		// glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);            // Required on Mac
 #else
 		// GL 3.0 + GLSL 130
 		const char* glsl_version = "#version 130";
 		glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
 		glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
-		glfwWindowHint(GLFW_SRGB_CAPABLE, 1);
 
 		//glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);  // 3.2+ only
 		//glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);            // 3.0+ only
 #endif
+		glfwWindowHint(GLFW_SRGB_CAPABLE, 1);
 
 		m_window = glfwCreateWindow(width, height, name.c_str(), NULL, NULL);
 	    if (!m_window)
@@ -288,15 +292,18 @@ void Context::Init(int width, int height, const std::string& name)
 	        glfwTerminate();
 			throw runtime_error("GLFW failed to create window.\nThis may happen if you try to run bimpy on a headless machine ");
 	    }
+		spdlog::info("glfwCreateWindow ok");
 
 		glfwMakeContextCurrent(m_window);
 		if (gl3wInit() != GL3W_OK)
 		{
-			throw runtime_error("GL3W initialization failed.\nThis may happen if you try to run bimpy on a headless machine ");
+			// throw runtime_error("GL3W initialization failed.\nThis may happen if you try to run bimpy on a headless machine ");
 		}
+		spdlog::info("gl3wInit ok");
 
-		Render::debug_guard<> m_guard;
+		// Render::debug_guard<> m_guard;
 		m_dr.Init();
+		spdlog::info("m_dr.Init ok");
 
 		glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
 
@@ -414,6 +421,8 @@ void Context::Init(int width, int height, const std::string& name)
 		m_spec = Render::VertexSpecMaker().PushType<glm::vec2>("a_position");
 
 		m_text.reset(new SimpleText);
+
+		spdlog::info("Init ok");
 	}
 }
 
@@ -493,26 +502,6 @@ void Context::Render()
 {
 	auto size = m_image->GetSize();
 
-	auto transform = m_camera.GetTransform();
-	glm::mat4 model = glm::scale(glm::mat4(1.0f), glm::vec3((size.x + 1) / 2.0f,  (size.y + 1) / 2.0f, 0.0f)) * glm::translate(glm::mat4(1.0f), glm::vec3(1.0, 1.0, 0.0f));
-	model[3].x -= 0.5;
-	model[3].y -= 0.5;
-	// Render::DrawRect(m_dr, glm::vec2(-1.0f), glm::vec&Image::2(1.0f), transform * model);
-	{
-		m_program->Use();
-		u_modelViewProj.ApplyValue(transform * model);
-		u_texture.ApplyValue(0);
-		glBindTexture(GL_TEXTURE_2D, m_image->GetHandle());
-
-		m_buff.Bind();
-		m_spec.Enable();
-		m_buff.DrawElements();
-		m_buff.UnBind();
-		m_spec.Disable();
-
-		glBindTexture(GL_TEXTURE_2D, 0);
-	}
-
 	{
 		auto transform = m_camera.GetCanvasToWorld();
 
@@ -538,7 +527,7 @@ void Context::Render()
 	}
 
 	m_text->EnableBlending(true);
-	m_text->Render();
+	// m_text->Render();
 
 	glfwSwapInterval(1);
 	glfwSwapBuffers(m_window);
@@ -559,11 +548,34 @@ void Context::NewFrame()
 		throw std::runtime_error("No image assigned");
 	}
 	glfwMakeContextCurrent(m_window);
-	Render::debug_guard<> m_guard;
+	// Render::debug_guard<> m_guard;
 	glViewport(0, 0, m_width, m_height);
 	glClear(GL_COLOR_BUFFER_BIT);
 	glEnable(GL_FRAMEBUFFER_SRGB);
 	nvgBeginFrame(vg, m_width, m_height, 1.0f);
+
+		auto size = m_image->GetSize();
+
+	auto transform = m_camera.GetTransform();
+	glm::mat4 model = glm::scale(glm::mat4(1.0f), glm::vec3((size.x + 1) / 2.0f,  (size.y + 1) / 2.0f, 0.0f)) * glm::translate(glm::mat4(1.0f), glm::vec3(1.0, 1.0, 0.0f));
+	model[3].x -= 0.5;
+	model[3].y -= 0.5;
+	// Render::DrawRect(m_dr, glm::vec2(-1.0f), glm::vec&Image::2(1.0f), transform * model);
+	{
+		m_program->Use();
+		u_modelViewProj.ApplyValue(transform * model);
+		u_texture.ApplyValue(0);
+		glBindTexture(GL_TEXTURE_2D, m_image->GetHandle());
+
+		m_buff.Bind();
+		m_spec.Enable();
+		m_buff.DrawElements();
+		m_buff.UnBind();
+		m_spec.Disable();
+
+		glBindTexture(GL_TEXTURE_2D, 0);
+	}
+
 }
 
 
@@ -699,14 +711,14 @@ PYBIND11_MODULE(_anntoolkit, m) {
 		})
 		.def("text", [](Context& self, const char* str, int x, int y, SimpleText::Alignment align)
 		{
-			self.m_text->Label(str, x, y, align);
+			self.m_text->RenderLabel(str, x, y, align);
 		})
 		.def("text", [](Context& self, const char* str, int x, int y, std::tuple<uint8_t, uint8_t, uint8_t, uint8_t> color, std::tuple<uint8_t, uint8_t, uint8_t, uint8_t> bg_color, SimpleText::Alignment align)
 		{
 			self.m_text->SetColorf(SimpleText::TEXT_COLOR, std::get<0>(color) / 255.f, std::get<1>(color) / 255.f, std::get<2>(color) / 255.f, std::get<3>(color) / 255.f);
 			self.m_text->SetColorf(SimpleText::BACKGROUND_COLOR, std::get<0>(bg_color) / 255.f, std::get<1>(bg_color) / 255.f, std::get<2>(bg_color) / 255.f, std::get<3>(bg_color) / 255.f);
 			self.m_text->EnableBlending(true);
-			self.m_text->Label(str, x, y, align);
+			self.m_text->RenderLabel(str, x, y, align);
 			self.m_text->ResetFont();
 		})
 		.def("text_loc", [](Context& self, const char* str, float x, float y, SimpleText::Alignment align)
@@ -716,7 +728,7 @@ PYBIND11_MODULE(_anntoolkit, m) {
 			glm::vec2 pos_local = glm::vec2(x, y);
 			glm::vec2 pos = transform * glm::vec3(pos_local, 1);
 
-			self.m_text->Label(str, pos.x, pos.y, align);
+			self.m_text->RenderLabel(str, pos.x, pos.y, align);
 		})
 		.def("loc_2_win", [](Context& self, float x, float y)
 		{
@@ -744,8 +756,8 @@ PYBIND11_MODULE(_anntoolkit, m) {
 			self.m_text->SetColorf(SimpleText::BACKGROUND_COLOR, std::get<0>(bg_color) / 255.f, std::get<1>(bg_color) / 255.f, std::get<2>(bg_color) / 255.f, std::get<3>(bg_color) / 255.f);
 			self.m_text->EnableBlending(true);
 
-			self.m_text->Label(str, pos.x, pos.y, align);
-			self.m_text->ResetFont();
+			self.m_text->RenderLabel(str, pos.x, pos.y, align);
+			//self.m_text->ResetFont();
 		})
 		.def("point",  &Context::Point, py::arg("x"), py::arg("y"), py::arg("color"), py::arg("radius") = 5)
 		.def("box",  &Context::Box);

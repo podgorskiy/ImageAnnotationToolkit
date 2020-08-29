@@ -347,9 +347,9 @@ void Context::Init(int width, int height, const std::string& name)
 			{
 				double x, y;
 				glfwGetCursorPos(window, &x, &y);
-				glm::vec2 cursorposition = glm::vec2(x, y);
+				glm::vec2 cursorposition = glm::vec2(x, y) * glm::vec2(ctx->m_display_w, ctx->m_display_h) / glm::vec2(ctx->m_width, ctx->m_height);
 				auto local = glm::vec2(ctx->m_camera.GetWorldToCanvas() * glm::vec3(cursorposition, 1.0f));
-				ctx->mouse_button_callback(action == GLFW_PRESS, float(x), float(y), local.x, local.y);
+				ctx->mouse_button_callback(action == GLFW_PRESS, cursorposition.x, cursorposition.y, local.x, local.y);
 			}
 		});
 		glfwSetCursorPosCallback(m_window, [](GLFWwindow* window, double x, double y)
@@ -357,9 +357,9 @@ void Context::Init(int width, int height, const std::string& name)
 			Context* ctx = static_cast<Context*>(glfwGetWindowUserPointer(window));
 			if (ctx->mouse_position_callback)
 			{
-				glm::vec2 cursorposition = glm::vec2(x, y);
+				glm::vec2 cursorposition = glm::vec2(x, y) * glm::vec2(ctx->m_display_w, ctx->m_display_h) / glm::vec2(ctx->m_width, ctx->m_height);
 				auto local = glm::vec2(ctx->m_camera.GetWorldToCanvas() * glm::vec3(cursorposition, 1.0f));
-				ctx->mouse_position_callback(float(x), float(y), local.x, local.y);
+				ctx->mouse_position_callback(cursorposition.x, cursorposition.y, local.x, local.y);
 			}
 		});
 
@@ -440,7 +440,7 @@ void Context::Recenter(RECENTER r)
 
 		if (m_display_w * 1.0f / m_display_h > size.x * 1.0f / size.y)
 		{
-			m_camera.SetFOV(size.y * 1.2f / m_height);
+			m_camera.SetFOV(size.y * 1.2f / m_display_h);
 		}
 		else
 		{
@@ -473,9 +473,9 @@ void Context::Recenter(float x0, float y0, float x1, float y1)
 
 	glm::vec2 r = glm::vec2(m_display_w, m_display_h) / glm::vec2(size);
 
-	if (m_display_w * 1.0f / m_height > size.x * 1.0f / size.y)
+	if (m_display_w * 1.0f / m_display_h > size.x * 1.0f / size.y)
 	{
-		m_camera.SetFOV(size.y * 1.2f / m_height);
+		m_camera.SetFOV(size.y * 1.2f / m_display_h);
 	}
 	else
 	{
@@ -557,9 +557,12 @@ void Context::Render()
 
 void Context::NewFrame()
 {
-	double x, y;
-	glfwGetCursorPos(m_window, &x, &y);
-	glm::vec2 cursorposition = glm::vec2(x, y);
+	glm::vec2 cursorposition;
+	{
+		double x, y;
+		glfwGetCursorPos(m_window, &x, &y);
+		cursorposition = glm::vec2(x, y) * glm::vec2(m_display_w, m_display_h) / glm::vec2(m_width, m_height);
+	}
 	m_camera.Move(cursorposition.x, cursorposition.y);
 	m_camera.UpdateViewProjection(m_display_w, m_display_h);
 
@@ -701,9 +704,9 @@ PYBIND11_MODULE(_anntoolkit, m) {
 		.def("get_mouse_position", [](Context& self){
 				double x, y;
 				glfwGetCursorPos(self.m_window, &x, &y);
-				glm::vec2 cursorposition = glm::vec2(x, y);
+				glm::vec2 cursorposition = glm::vec2(x, y) * glm::vec2(self.m_display_w, self.m_display_h) / glm::vec2(self.m_width, self.m_height);
 				auto local = glm::vec2(self.m_camera.GetWorldToCanvas() * glm::vec3(cursorposition, 1.0f));
-				return std::make_tuple(float(x), float(y), local.x, local.y);
+				return std::make_tuple(cursorposition.x, cursorposition.y, local.x, local.y);
 		})
 		.def("set_keyboard_callback", [](Context& self, py::function f){
 			self.keyboard_callback = f;

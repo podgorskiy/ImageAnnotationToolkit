@@ -210,7 +210,7 @@ public:
 
 	void Init(int width, int height, const std::string& name);
 
-	void Resize(int width, int height);
+	void Resize(int width, int height, int display_w, int display_h);
 
 	void Recenter(RECENTER r);
 	void Recenter(float x0, float y0, float x1, float y1);
@@ -233,6 +233,8 @@ public:
 	GLFWwindow* m_window = nullptr;
 	int m_width;
 	int m_height;
+	int m_display_w;
+	int m_display_h;
 	py::function mouse_button_callback;
 	py::function mouse_position_callback;
 	py::function keyboard_callback;
@@ -305,12 +307,17 @@ void Context::Init(int width, int height, const std::string& name)
 		m_width = width;
 		m_height = height;
 
+		glfwGetWindowSize(m_window, &m_width, &m_height);
+		glfwGetFramebufferSize(m_window, &m_display_w, &m_display_h);
+
 		glfwSetWindowUserPointer(m_window, this); // replaced m_imp.get()
 
 		glfwSetWindowSizeCallback(m_window, [](GLFWwindow* window, int width, int height)
 		{
 			Context* ctx = static_cast<Context*>(glfwGetWindowUserPointer(window));
-			ctx->Resize(width, height);
+		    int display_w, display_h;
+		    glfwGetFramebufferSize(window, &display_w, &display_h);
+		    ctx->Resize(width, height, display_w, display_h);
 		});
 
 		glfwSetKeyCallback(m_window, [](GLFWwindow* window, int key, int, int action, int mods)
@@ -429,15 +436,15 @@ void Context::Recenter(RECENTER r)
 	auto size = m_image->GetSize();
 	if (r == RECENTER::FIT_DOCUMENT)
 	{
-		glm::vec2 r = glm::vec2(m_width, m_height) / glm::vec2(size);
+		glm::vec2 r = glm::vec2(m_display_w, m_display_h) / glm::vec2(size);
 
-		if (m_width * 1.0f / m_height > size.x * 1.0f / size.y)
+		if (m_display_w * 1.0f / m_display_h > size.x * 1.0f / size.y)
 		{
 			m_camera.SetFOV(size.y * 1.2f / m_height);
 		}
 		else
 		{
-			m_camera.SetFOV(size.x * 1.2f / m_width);
+			m_camera.SetFOV(size.x * 1.2f / m_display_w);
 		}
 	}
 	else
@@ -445,7 +452,7 @@ void Context::Recenter(RECENTER r)
 		m_camera.SetFOV(1.0f);
 	}
 
-	auto clientArea = glm::vec2(m_width, m_height);
+	auto clientArea = glm::vec2(m_display_w, m_display_h);
 
 	clientArea = glm::ivec2(glm::vec2(clientArea) * m_camera.GetFOV());
 
@@ -464,18 +471,18 @@ void Context::Recenter(float x0, float y0, float x1, float y1)
 	auto p1 = glm::vec2(x1, y1);
 	auto size = p1 - p0;
 
-	glm::vec2 r = glm::vec2(m_width, m_height) / glm::vec2(size);
+	glm::vec2 r = glm::vec2(m_display_w, m_display_h) / glm::vec2(size);
 
-	if (m_width * 1.0f / m_height > size.x * 1.0f / size.y)
+	if (m_display_w * 1.0f / m_height > size.x * 1.0f / size.y)
 	{
 		m_camera.SetFOV(size.y * 1.2f / m_height);
 	}
 	else
 	{
-		m_camera.SetFOV(size.x * 1.2f / m_width);
+		m_camera.SetFOV(size.x * 1.2f / m_display_w);
 	}
 
-	auto clientArea = glm::vec2(m_width, m_height);
+	auto clientArea = glm::vec2(m_display_w, m_display_h);
 
 	clientArea = glm::ivec2(glm::vec2(clientArea) * m_camera.GetFOV());
 
@@ -554,7 +561,7 @@ void Context::NewFrame()
 	glfwGetCursorPos(m_window, &x, &y);
 	glm::vec2 cursorposition = glm::vec2(x, y);
 	m_camera.Move(cursorposition.x, cursorposition.y);
-	m_camera.UpdateViewProjection(m_width, m_height);
+	m_camera.UpdateViewProjection(m_display_w, m_display_h);
 
 	if (!m_image)
 	{
@@ -562,27 +569,29 @@ void Context::NewFrame()
 	}
 	glfwMakeContextCurrent(m_window);
 	Render::debug_guard<> m_guard;
-	glViewport(0, 0, m_width, m_height);
+	glViewport(0, 0, m_display_w, m_display_h);
 	glClear(GL_COLOR_BUFFER_BIT);
 	glEnable(GL_FRAMEBUFFER_SRGB);
-	nvgBeginFrame(vg, m_width, m_height, 1.0f);
+	nvgBeginFrame(vg, m_display_w, m_display_h, 1.0f);
 }
 
 
-void Context::Resize(int width, int height)
+void Context::Resize(int width, int height, int display_w, int display_h)
 {
 	if (!m_image)
 	{
 		throw std::runtime_error("No image assigned");
 	}
-	auto oldWindowBufferSize = glm::vec2(m_width, m_height);
+	auto oldWindowBufferSize = glm::vec2(m_display_w, m_display_h);
 	m_width = width;
 	m_height = height;
-	m_camera.UpdateViewProjection(m_width, m_height);
+	m_display_w = display_w;
+	m_display_h = display_h;
+	m_camera.UpdateViewProjection(m_display_w, m_display_h);
 	auto size = m_image->GetSize();
 
 	auto oldClientArea = oldWindowBufferSize;
-	auto clientArea = glm::vec2(m_width, m_height);// - glm::ivec2(0, MainMenuBar * m_window->GetPixelScale());
+	auto clientArea = glm::vec2(m_display_w, m_display_h);// - glm::ivec2(0, MainMenuBar * m_window->GetPixelScale());
 
 	auto pos = m_camera.GetPos();
 	auto delta = glm::vec2((clientArea - oldClientArea) / 2.0f) * m_camera.GetFOV();
@@ -597,12 +606,12 @@ bool Context::ShouldClose()
 
 int Context::GetWidth() const
 {
-	return m_width;
+	return m_display_w;
 }
 
 int Context::GetHeight() const
 {
-	return m_height;
+	return m_display_h;
 }
 
 void Context::Point(float x, float y, std::tuple<uint8_t, uint8_t, uint8_t, uint8_t> color, float point_size) const
